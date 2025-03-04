@@ -138,7 +138,7 @@ function createCoin() {
     const now = Date.now();
     
     // Control coin generation frequency
-    if (now - lastCoinTime < 1000) return;
+    if (now - lastCoinTime < 100) return;
     
     // Make sure coins don't spawn too close to obstacles
     let tooClose = false;
@@ -160,7 +160,7 @@ function createCoin() {
         width: 20,
         height: 20,
         speed: gameSpeed,
-        value: 1
+        value: 5
     };
     
     coins.push(coin);
