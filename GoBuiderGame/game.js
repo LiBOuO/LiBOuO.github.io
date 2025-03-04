@@ -9,7 +9,7 @@ const restartButton = document.getElementById('restartButton');
 const redirectButton = document.getElementById('redirectButton');
 
 // 設定跳轉按鈕的目標URL
-const REDIRECT_URL = "https://example.com"; // 替換為你想跳轉的實際URL
+const REDIRECT_URL = "https://portaly.cc/ftc17257/support"; // 替換為你想跳轉的實際URL
 
 // Game constants
 const GROUND_HEIGHT = 50;
