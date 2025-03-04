@@ -314,7 +314,8 @@ function gameOver() {
 
 // 跳轉到另一個網頁的函數
 function redirectToNextPage() {
-    window.location.href = REDIRECT_URL;
+    window.open(REDIRECT_URL);
+    newTab.location;
 }
 
 // Keyboard input
