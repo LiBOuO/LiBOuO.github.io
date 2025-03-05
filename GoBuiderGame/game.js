@@ -27,6 +27,14 @@ let lastObstacleTime = 0;
 let lastCoinTime = 0;
 let minObstacleDistance = 500;
 
+//background image
+const backgroundImage = new Image();
+backgroundImage.src = 'background.png';  // 確保該圖片與HTML/CSS配合
+
+// 背景位置
+let bgX = 0;
+const bgSpeed = 3;  // 背景移動速度
+
 // Character properties
 const character = {
     x: 100,
@@ -234,6 +242,18 @@ function drawGround() {
     ctx.fillRect(0, GROUND_Y, canvas.width, GROUND_HEIGHT);
 }
 
+function drawBackground() {
+    ctx.drawImage(backgroundImage, bgX, 0, canvas.width, canvas.height);
+    ctx.drawImage(backgroundImage, bgX + canvas.width, 0, canvas.width, canvas.height);
+
+    // 更新背景位置
+    bgX -= bgSpeed;
+    if (bgX <= -canvas.width) {
+        bgX = 0;  // 當背景完全移動出畫面，重置位置
+    }
+}
+
+
 // Draw score/timer and coin count
 function drawScore() {
     ctx.fillStyle = 'black';
@@ -262,6 +282,7 @@ function gameLoop() {
     createCoin();
     
     // Draw and update game elements
+    drawBackground();  // 先繪製背景
     drawGround();
     character.update();
     character.draw();
