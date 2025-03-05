@@ -3,7 +3,6 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const startScreen = document.getElementById('startScreen');
 const gameOverScreen = document.getElementById('gameOverScreen');
-const finalTimeSpan = document.getElementById('finalTime');
 const finalCoinsSpan = document.getElementById('finalCoins');
 const restartButton = document.getElementById('restartButton');
 const redirectButton = document.getElementById('redirectButton');
@@ -18,7 +17,6 @@ const GROUND_Y = canvas.height - GROUND_HEIGHT;
 // Game variables
 let gameActive = false;
 let gameSpeed = 5;
-let score = 0;
 let coinCount = 0;
 let obstacles = [];
 let coins = [];
@@ -26,14 +24,36 @@ let speedIncreaseInterval;
 let lastObstacleTime = 0;
 let lastCoinTime = 0;
 let minObstacleDistance = 500;
+let changeCharacterRunStatus;
 
 //background image
 const backgroundImage = new Image();
 backgroundImage.src = 'background.png';  // 確保該圖片與HTML/CSS配合
 
+const highObstacles = new Image();
+highObstacles.src = 'high.png';  // 確保該圖片與HTML/CSS配合
+
+const lowObstacles = new Image();
+lowObstacles.src = 'low.png';  // 確保該圖片與HTML/CSS配合
+
+const floorImage = new Image();
+floorImage.src = 'floor.png';  // 確保該圖片與HTML/CSS配合
+
 // 背景位置
 let bgX = 0;
-const bgSpeed = 3;  // 背景移動速度
+const bgSpeed = 0.1;  // 背景移動速度
+
+let objposX = 0;
+let floorX = 0;
+
+const characterRun1 = new Image();
+characterRun1.src = 'run1.png';  // 確保該圖片與HTML/CSS配合
+const characterRun2 = new Image();
+characterRun2.src = 'run2.png';  // 確保該圖片與HTML/CSS配合
+const characterSlide = new Image();
+characterSlide.src = 'slide.png';  // 確保該圖片與HTML/CSS配合
+let characterRunStauts = 0;
+let characterSpriteStatus = 'run';
 
 // Character properties
 const character = {
@@ -48,37 +68,46 @@ const character = {
     gravity: 0.1,  // 降低重力使跳躍更高更遠
     slideHeight: 100,
     originalHeight: 200,
-    draw: function() {
-        ctx.fillStyle = 'red';
+    draw: function () {
+        ctx.fillStyle = 'transparent';
         ctx.fillRect(this.x, this.y, this.width, this.height);
+        if (this.isSliding) {
+            ctx.drawImage(characterSlide, this.x - (this.x - characterSlide.x) / 2, this.y + 10, characterSlide.width * 0.6, characterSlide.height * 0.6);
+        }
+        else if (characterRunStauts == 1) {
+            ctx.drawImage(characterRun2, this.x , this.y, characterRun2.width * 0.5, characterRun2.height * 0.5);
+        }
+        else if (characterRunStauts == 0) {
+            ctx.drawImage(characterRun1, this.x , this.y, characterRun1.width * 0.5, characterRun1.height * 0.5);
+        }
     },
-    jump: function() {
+    jump: function () {
         if (!this.isJumping && !this.isSliding) {
             this.isJumping = true;
             // 增加初始跳躍速度使跳得更高
             this.jumpVelocity = -10;  // 調整初始速度使高度為300px
         }
     },
-    slide: function() {
+    slide: function () {
         if (!this.isJumping && !this.isSliding) {
             this.isSliding = true;
             this.height = this.slideHeight;
             this.y = GROUND_Y - this.slideHeight;
         }
     },
-    update: function() {
+    update: function () {
         // Handle jumping
         if (this.isJumping) {
             this.y += this.jumpVelocity;
             this.jumpVelocity += this.gravity;
-            
+
             // 確保跳躍高度不超過300px
             const maxHeight = GROUND_Y - this.height - this.jumpHeight;
             if (this.y < maxHeight) {
                 this.y = maxHeight;
                 this.jumpVelocity = 0;  // 開始下落
             }
-            
+
             // Check if landed
             if (this.y >= GROUND_Y - this.height) {
                 this.y = GROUND_Y - this.height;
@@ -86,7 +115,7 @@ const character = {
                 this.jumpVelocity = 0;
             }
         }
-        
+
         // Reset sliding
         if (this.isSliding && !keyDown["ArrowDown"]) {
             this.height = this.originalHeight;
@@ -94,7 +123,7 @@ const character = {
             this.isSliding = false;
         }
     },
-    checkCollision: function(object) {
+    checkCollision: function (object) {
         return (
             this.x < object.x + object.width &&
             this.x + this.width > object.x &&
@@ -104,13 +133,14 @@ const character = {
     }
 };
 
+
 // Obstacle factory
 function createObstacle() {
     const now = Date.now();
-    
+
     // 減少障礙物生成頻率，使跳躍有更多時間
     if (now - lastObstacleTime < 1800 / (gameSpeed / 5)) return;
-    
+
     // Check if last obstacle has traveled minimum distance
     if (obstacles.length > 0) {
         const lastObstacle = obstacles[obstacles.length - 1];
@@ -118,17 +148,17 @@ function createObstacle() {
             return;
         }
     }
-    
+
     // Randomly choose obstacle type (0: bottom obstacle, 1: top obstacle)
     const type = Math.floor(Math.random() * 2);
-    
+
     let obstacle = {
         x: canvas.width,
         width: 120,
         type: type,
         speed: gameSpeed
     };
-    
+
     if (type === 0) { // Bottom obstacle
         obstacle.height = 100;
         obstacle.y = GROUND_Y - obstacle.height;
@@ -136,31 +166,13 @@ function createObstacle() {
         obstacle.height = canvas.height - GROUND_Y + 450;
         obstacle.y = 0;
     }
-    
+
     obstacles.push(obstacle);
     lastObstacleTime = now;
 }
 
 // Coin factory - create coins on the ground
 function createCoin() {
-    const now = Date.now();
-    
-    // Control coin generation frequency
-    if (now - lastCoinTime < 100) return;
-    
-    // Make sure coins don't spawn too close to obstacles
-    let tooClose = false;
-    obstacles.forEach(obstacle => {
-        if (obstacle.type === 0) { // Only check ground obstacles
-            const distance = obstacle.x - canvas.width;
-            if (Math.abs(distance) < 200) {
-                tooClose = true;
-            }
-        }
-    });
-    
-    if (tooClose) return;
-    
     // Create coin object
     const coin = {
         x: canvas.width,
@@ -170,7 +182,30 @@ function createCoin() {
         speed: gameSpeed,
         value: 5
     };
-    
+
+    const now = Date.now();
+
+    // Control coin generation frequency
+    if (now - lastCoinTime < 100) return;
+
+    // Make sure coins don't spawn too close to obstacles
+    let tooClose = false;
+    obstacles.forEach(obstacle => {
+        if (obstacle.x < 10) {
+            tooClose = true;
+        }
+        else if (obstacle.type === 0) { // Only check ground obstacles
+            const distance = obstacle.x - canvas.width;
+            if (Math.abs(distance) < 200) {
+                tooClose = true;
+            }
+        }
+    });
+
+    if (tooClose) return;
+
+
+
     coins.push(coin);
     lastCoinTime = now;
 }
@@ -181,7 +216,7 @@ function drawCoins() {
     coins.forEach(coin => {
         // Draw circle for coin
         ctx.beginPath();
-        ctx.arc(coin.x + coin.width/2, coin.y + coin.height/2, coin.width/2, 0, Math.PI * 2);
+        ctx.arc(coin.x + coin.width / 2, coin.y + coin.height / 2, coin.width / 2, 0, Math.PI * 2);
         ctx.fill();
     });
 }
@@ -189,14 +224,14 @@ function drawCoins() {
 // Update coins
 function updateCoins() {
     for (let i = coins.length - 1; i >= 0; i--) {
-        coins[i].x -= coins[i].speed;
-        
+        coins[i].x -= gameSpeed;
+
         // Remove coins that are off-screen
         if (coins[i].x + coins[i].width < 0) {
             coins.splice(i, 1);
             continue;
         }
-        
+
         // Check if coin is collected
         if (character.checkCollision(coins[i])) {
             coinCount += coins[i].value;
@@ -211,24 +246,29 @@ function drawObstacles() {
     obstacles.forEach(obstacle => {
         if (obstacle.type === 0) {
             ctx.fillStyle = 'green';
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height)
+            ctx.drawImage(lowObstacles, obstacle.x + (obstacle.width - lowObstacles.width) / 2, obstacle.y);
         } else {
             ctx.fillStyle = 'blue';
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height)
+            ctx.drawImage(highObstacles, obstacle.x + (obstacle.width - highObstacles.width) / 2, obstacle.y);
         }
-        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        //ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
     });
 }
 
 // Update obstacles
 function updateObstacles() {
     for (let i = obstacles.length - 1; i >= 0; i--) {
-        obstacles[i].x -= obstacles[i].speed;
-        
+        obstacles[i].x -= gameSpeed;
+        objposX = obstacles[i].x;
+
         // Remove obstacles that are off-screen
         if (obstacles[i].x + obstacles[i].width < 0) {
             obstacles.splice(i, 1);
             continue;
         }
-        
+
         // Check collision
         if (character.checkCollision(obstacles[i])) {
             gameOver();
@@ -240,6 +280,14 @@ function updateObstacles() {
 function drawGround() {
     ctx.fillStyle = '#8B4513';
     ctx.fillRect(0, GROUND_Y, canvas.width, GROUND_HEIGHT);
+    ctx.drawImage(floorImage, floorX, GROUND_Y);
+    ctx.drawImage(floorImage, floorX + canvas.width, GROUND_Y);
+
+    // 更新背景位置
+    floorX -= gameSpeed;
+    if (floorX <= -canvas.width) {
+        floorX = 0;  // 當背景完全移動出畫面，重置位置
+    }
 }
 
 function drawBackground() {
@@ -256,54 +304,52 @@ function drawBackground() {
 
 // Draw score/timer and coin count
 function drawScore() {
-    ctx.fillStyle = 'black';
-    ctx.font = '24px Arial';
-    ctx.textAlign = 'right';
-    ctx.fillText(`存活時間: ${Math.floor(score)} 秒`, canvas.width - 20, 30);
-    
     // Draw coin count
     ctx.fillStyle = 'gold';
-    ctx.textAlign = 'left';
-    ctx.fillText(`金幣: ${coinCount}`, 20, 30);
+    ctx.font = '24px Arial';
+    ctx.textAlign = 'right';
+    ctx.fillText(`金幣: ${coinCount}`, canvas.width - 30, 30);
+}
+
+function updatelevel() {
+    gameSpeed = 5 * (1 + level / 5);
 }
 
 // Main game loop
 function gameLoop() {
     if (!gameActive) return;
-    
+
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // Update score
-    score += 1/60;
-    
+
     // Create obstacles and coins
     createObstacle();
     createCoin();
-    
+
     // Draw and update game elements
     drawBackground();  // 先繪製背景
-    drawGround();
+    updatelevel();
     character.update();
     character.draw();
     updateObstacles();
+    drawGround();
     drawObstacles();
     updateCoins();
     drawCoins();
     drawScore();
-    
+
     requestAnimationFrame(gameLoop);
 }
 
 // Start game function
 function startGame() {
     gameActive = true;
-    score = 0;
     coinCount = 0;
     obstacles = [];
     coins = [];
+    level = 1;
     gameSpeed = 5;
-    
+
     // Reset character position
     character.y = GROUND_Y - character.originalHeight;
     character.height = 200; // 使用實際高度而非originalHeight
@@ -311,15 +357,21 @@ function startGame() {
     this.y = GROUND_Y - this.originalHeight;
     this.isSliding = false;
     character.isJumping = false;
-    
+
     startScreen.style.display = 'none';
     gameOverScreen.style.display = 'none';
-    
+
     // Speed increase every 10 seconds
     speedIncreaseInterval = setInterval(() => {
-        gameSpeed *= 1.1;
-    }, 10000);
-    
+        level += 1;
+    }, 20000);
+
+    // Speed increase every 10 seconds
+    changeCharacterRunStatus = setInterval(() => {
+        characterRunStauts += 1;
+        characterRunStauts %= 2;
+    }, 100);
+
     gameLoop();
 }
 
@@ -327,8 +379,7 @@ function startGame() {
 function gameOver() {
     gameActive = false;
     clearInterval(speedIncreaseInterval);
-    
-    finalTimeSpan.textContent = Math.floor(score);
+    clearInterval(changeCharacterRunStatus);
     finalCoinsSpan.textContent = coinCount;
     gameOverScreen.style.display = 'flex';
 }
@@ -342,15 +393,15 @@ function redirectToNextPage() {
 // Keyboard input
 const keyDown = {};
 
-window.addEventListener('keydown', function(e) {
+window.addEventListener('keydown', function (e) {
     keyDown[e.key] = true;
-    
+
     // Start game on any key if on start screen
     if (startScreen.style.display !== 'none') {
         startGame();
         return;
     }
-    
+
     if (gameActive) {
         if (e.key === 'ArrowUp' || e.key === ' ') {
             character.jump();
@@ -360,7 +411,7 @@ window.addEventListener('keydown', function(e) {
     }
 });
 
-window.addEventListener('keyup', function(e) {
+window.addEventListener('keyup', function (e) {
     keyDown[e.key] = false;
 });
 
