@@ -75,10 +75,10 @@ const character = {
             ctx.drawImage(characterSlide, this.x - (this.x - characterSlide.x) / 2, this.y + 10, characterSlide.width * 0.6, characterSlide.height * 0.6);
         }
         else if (characterRunStauts == 1) {
-            ctx.drawImage(characterRun2, this.x , this.y, characterRun2.width * 0.5, characterRun2.height * 0.5);
+            ctx.drawImage(characterRun2, this.x, this.y, characterRun2.width * 0.5, characterRun2.height * 0.5);
         }
         else if (characterRunStauts == 0) {
-            ctx.drawImage(characterRun1, this.x , this.y, characterRun1.width * 0.5, characterRun1.height * 0.5);
+            ctx.drawImage(characterRun1, this.x, this.y, characterRun1.width * 0.5, characterRun1.height * 0.5);
         }
     },
     jump: function () {
@@ -292,7 +292,7 @@ function drawGround() {
 
 function drawBackground() {
     ctx.drawImage(backgroundImage, bgX, 0, canvas.width, canvas.height);
-    ctx.drawImage(backgroundImage, bgX + canvas.width, 0, canvas.width, canvas.height);
+    ctx.drawImage(backgroundImage, bgX + canvas.width - 1, 0, canvas.width, canvas.height);
 
     // 更新背景位置
     bgX -= bgSpeed;
