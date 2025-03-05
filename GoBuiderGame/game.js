@@ -65,7 +65,7 @@ const character = {
     isSliding: false,
     jumpHeight: 300,
     jumpVelocity: 0,
-    gravity: 0.1,  // 降低重力使跳躍更高更遠
+    gravity: 0.3,  // 降低重力使跳躍更高更遠
     slideHeight: 100,
     originalHeight: 200,
     draw: function () {
@@ -85,7 +85,7 @@ const character = {
         if (!this.isJumping && !this.isSliding) {
             this.isJumping = true;
             // 增加初始跳躍速度使跳得更高
-            this.jumpVelocity = -10;  // 調整初始速度使高度為300px
+            this.jumpVelocity = -14;  // 調整初始速度使高度為300px
         }
     },
     slide: function () {
