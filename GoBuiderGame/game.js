@@ -28,7 +28,7 @@ let changeCharacterRunStatus;
 
 //background image
 const backgroundImage = new Image();
-backgroundImage.src = 'background.png';  // 確保該圖片與HTML/CSS配合
+backgroundImage.src = 'background.webp';  // 確保該圖片與HTML/CSS配合
 
 const highObstacles = new Image();
 highObstacles.src = 'high.png';  // 確保該圖片與HTML/CSS配合
