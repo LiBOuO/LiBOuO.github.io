@@ -315,19 +315,31 @@ function updatelevel() {
     gameSpeed = 5 * (1 + level / 5);
 }
 
-// Main game loop
-function gameLoop() {
+// 設定目標 FPS
+const targetFPS = 60;
+const frameInterval = 100 / targetFPS;  // 每幀的間隔時間（毫秒）
+
+let lastFrameTime = 0;
+
+function gameLoop(timestamp) {
     if (!gameActive) return;
 
-    // Clear canvas
+    // 計算每幀的時間間隔
+    const deltaTime = timestamp - lastFrameTime;
+    if (deltaTime < frameInterval) return;
+
+    // 更新上次幀的時間
+    lastFrameTime = timestamp - (deltaTime % frameInterval);
+
+    // 清空畫布
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Create obstacles and coins
+    // 創建障礙物與金幣
     createObstacle();
     createCoin();
 
-    // Draw and update game elements
-    drawBackground();  // 先繪製背景
+    // 繪製與更新遊戲元素
+    drawBackground();
     updatelevel();
     character.update();
     character.draw();
@@ -338,10 +350,11 @@ function gameLoop() {
     drawCoins();
     drawScore();
 
+    // 繼續執行下一幀
     requestAnimationFrame(gameLoop);
 }
 
-// Start game function
+// 開始遊戲
 function startGame() {
     gameActive = true;
     coinCount = 0;
@@ -350,29 +363,28 @@ function startGame() {
     level = 1;
     gameSpeed = 5;
 
-    // Reset character position
+    // 重置角色位置
     character.y = GROUND_Y - character.originalHeight;
-    character.height = 200; // 使用實際高度而非originalHeight
-    this.height = this.originalHeight;
-    this.y = GROUND_Y - this.originalHeight;
-    this.isSliding = false;
+    character.height = 200;
+    character.isSliding = false;
     character.isJumping = false;
 
     startScreen.style.display = 'none';
     gameOverScreen.style.display = 'none';
 
-    // Speed increase every 10 seconds
+    // 每 10 秒提高遊戲速度
     speedIncreaseInterval = setInterval(() => {
         level += 1;
     }, 20000);
 
-    // Speed increase every 10 seconds
+    // 每 100 毫秒更新角色狀態
     changeCharacterRunStatus = setInterval(() => {
         characterRunStauts += 1;
         characterRunStauts %= 2;
     }, 100);
 
-    gameLoop();
+    // 開始遊戲循環
+    requestAnimationFrame(gameLoop);
 }
 
 // Game over function
