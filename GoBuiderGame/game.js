@@ -361,7 +361,7 @@ function startGame() {
     obstacles = [];
     coins = [];
     level = 1;
-    gameSpeed = 5;
+    gameSpeed = 500;
 
     // 重置角色位置
     character.y = GROUND_Y - character.originalHeight;
