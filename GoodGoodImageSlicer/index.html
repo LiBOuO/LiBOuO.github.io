@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>圖片分割工具（互動版）</title>
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script defer src="script.js"></script>
+</head>
+<body>
+  <header class="container">
+    <h1>圖片分割工具（互動版）</h1>
+    <p class="sub">上傳圖片 → 用上方/左方的 bar 新增分割線 → 可選取/編輯/刪除 → 產生分割小圖</p>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>1️⃣ 上傳圖片</h2>
+      <input id="fileInput" type="file" accept="image/*" />
+      <div id="imgMeta" class="meta"></div>
+
+      <div id="stageWrap">
+        <div id="stageGrid">
+          <div id="leftBar" class="bar bar-left" title="在此點擊以新增水平分割線（Y）"></div>
+          <div id="topBar" class="bar bar-top" title="在此點擊以新增垂直分割線（X）"></div>
+
+          <div id="canvasCell">
+            <canvas id="previewCanvas"></canvas>
+            <canvas id="overlayCanvas"></canvas>
+          </div>
+        </div>
+      </div>
+      <small class="hint">提示：預覽會自動縮放到你螢幕寬度內，保持像素等比；分割仍以原始像素計算。</small>
+    </section>
+
+    <section class="card">
+      <h2>2️⃣ 分割座標</h2>
+      <div class="coord-lists">
+        <div class="coord-block">
+          <div class="coord-title">X（垂直線，單位：px）</div>
+          <div id="xList" class="chip-list"></div>
+        </div>
+        <div class="coord-block">
+          <div class="coord-title">Y（水平線，單位：px）</div>
+          <div id="yList" class="chip-list"></div>
+        </div>
+      </div>
+      <div class="row">
+        <button id="btnSplit" disabled>開始分割</button>
+        <button id="btnZip" class="ghost" disabled>全部下載（ZIP）</button>
+        <span id="msg" class="msg"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>3️⃣ 分割結果</h2>
+      <div id="result" class="result-grid"></div>
+    </section>
+  </main>
+
+  <footer class="container footer">
+    <small>系統自動包含 0 與圖片寬/高作為邊界；不接受越界或重複座標（會提示）。</small>
+  </footer>
+</body>
+</html>
