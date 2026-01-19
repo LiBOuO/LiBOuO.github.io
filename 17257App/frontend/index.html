@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>我的 PWA App</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body style="font-family: sans-serif; padding: 20px; text-align: center;">
+
+    <section>
+    <h3>分數計算機</h3>
+    <input type="text" id="team-name" placeholder="隊伍名稱">
+    <input type="number" id="score-input" placeholder="分數">
+    <button onclick="submitScore()">存入分數</button>
+    <button onclick="loadScores()">讀取記分板</button>
+</section>
+
+<hr>
+
+<section>
+    <h3>評論區</h3>
+    <input type="text" id="comment-author" placeholder="你的名字">
+    <textarea id="comment-content" placeholder="輸入評論..."></textarea>
+    <button onclick="submitComment()">送出評論</button>
+</section>
+
+    <script>
+        const API_BASE = "http://127.0.0.1:8000/api";
+
+        // --- 分數相關 ---
+        async function submitScore() {
+            const teamName = document.getElementById('team-name').value;
+            const points = parseInt(document.getElementById('score-input').value);
+
+            try {
+                const response = await fetch(`${API_BASE}/scores`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ team_name: teamName, points: points })
+                });
+                if (!response.ok) throw new Error("傳送失敗");
+                alert("分數已存入資料庫");
+            } catch (error) {
+                console.error("錯誤:", error);
+            }
+        }
+
+        async function loadScores() {
+            const response = await fetch(`${API_BASE}/scores`);
+            const data = await response.json();
+            console.log("記分板紀錄:", data);
+            // 這裡可以寫 DOM 操作將資料顯示在網頁上
+        }
+
+        // --- 評論相關 ---
+        async function submitComment() {
+            const author = document.getElementById('comment-author').value;
+            const content = document.getElementById('comment-content').value;
+
+            try {
+                const response = await fetch(`${API_BASE}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ author: author, content: content })
+                });
+                if (!response.ok) throw new Error("傳送失敗");
+                alert("評論已送出");
+            } catch (error) {
+                console.error("錯誤:", error);
+            }
+        }
+    </script>
+</body>
+
+</html>
